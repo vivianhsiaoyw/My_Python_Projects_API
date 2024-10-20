@@ -8,8 +8,9 @@ from oauth2client.file import Storage
 
 save_dir = r'C:\Users\Vivian\Desktop' #save file location
 filename = 'GoogleSheet權限管理' #save file name
-fileinfo = [
-    {'file': 'googlesheetname', 'id': 'googlesheetid', 'filename': f'{filename}_1'}, #your googlesheet name and id
+#your googlesheet names and ids
+fileinfo = [ 
+    {'file': 'googlesheetname', 'id': 'googlesheetid', 'filename': f'{filename}_1'}, 
     {'file': 'googlesheetname', 'id': 'googlesheetid', 'filename': f'{filename}_2'}
 ]
 
@@ -23,7 +24,7 @@ credentials = authInst.getCredentials()
 http = credentials.authorize(httplib2.Http())
 drive_service = discovery.build('drive', 'v3', http=http)
 
-#save to excel function
+#create save to excel function
 def fuct_to_csv(df, fn):
     df.to_csv(fn, sep='\t', encoding='utf_8_sig', date_format='string',
               index=False, chunksize=10**5)
@@ -31,7 +32,7 @@ def fuct_to_excel(df, fn):
     df.to_excel(fn, sheet_name='data', encoding='utf_8_sig',
                 index=False)
 
-#google sheet user list save to excel file
+#for google sheet user list save to excel file
 class file_obj:
     def __init__(self, fileinfo):
         self.fileid = fileinfo.get('id', '')
@@ -55,12 +56,13 @@ class file_obj:
                 pass
         return credentials
         
-    def get_permissions(self): #get user list
+    def get_permissions(self): 
         """Get all permissions for a file.
         :param file_resource: The file to query permissions for.
         :return: All permissions on the file.
         """
 
+        #get user name, email, and permission role
         perm_request = drive_service.permissions().list(fileId = self.fileid,
                                                         fields = "permissions(displayName,emailAddress,role)").execute()
         permission = perm_request.get('permissions', [])
@@ -81,4 +83,4 @@ def loop_fileinfo(fileinfo):
         print('finish : ', file['file'])
 
 if __name__ == '__main__':
-        loop_fileinfo(fileinfo)
+    loop_fileinfo(fileinfo)
