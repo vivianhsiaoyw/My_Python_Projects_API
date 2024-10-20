@@ -22,7 +22,6 @@ authInst = auth.auth(SCOPES,CLIENT_SECRET_FILE,APPLICATION_NAME)
 credentials = authInst.getCredentials()
 http = credentials.authorize(httplib2.Http())
 drive_service = discovery.build('drive', 'v3', http=http)
-os.chdir(save_dir)
 
 #save to excel function
 def fuct_to_csv(df, fn):
@@ -75,6 +74,7 @@ class file_obj:
         fuct_to_excel(df ,self.filename + '.xlsx')
         
 def loop_fileinfo(fileinfo):
+    os.chdir(save_dir)
     for file in fileinfo:
         obj = file_obj(file)
         obj.to_excel()
