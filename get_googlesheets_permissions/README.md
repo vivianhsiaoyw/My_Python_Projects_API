@@ -1,0 +1,1 @@
+The purpose of this Python project is to simplify the management of multiple Google Sheets by retrieving Google Sheets permissions and comparing them with the company’s employee list for effective management.
