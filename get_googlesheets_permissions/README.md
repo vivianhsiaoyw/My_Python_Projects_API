@@ -1,1 +1,5 @@
-The purpose of this Python project is to simplify the management of multiple Google Sheets by retrieving Google Sheets permissions and comparing them with the company’s employee list for effective management.
+
+  - **Problem to Solve**:
+Our department managed multiple Google Sheets, making it challenging for managers to efficiently handle permission settings.
+  - **How**:
+Utilizes the <u>__"Google Drive API”__</u> to retrieve user permission lists from multiple Google Sheets, ensuring streamlined access management.
