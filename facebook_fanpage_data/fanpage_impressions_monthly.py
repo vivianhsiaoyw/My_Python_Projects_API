@@ -1,3 +1,19 @@
+"""
+This script retrieves monthly impression data from your Facebook fan page
+and stores the data in a specified Google Sheet.
+
+- Automates the process of fetching fan page impression metrics on a monthly basis.
+- Integrates with the Facebook Graph API for reliable data retrieval.
+- Utilizes the Google Sheets API to store and update the data seamlessly.
+- Ensures data accuracy and provides a scalable solution for long-term tracking.
+
+Prerequisites:
+- Facebook Graph API access token with permissions to read insights.
+- Google Cloud credentials for accessing the Google Sheets API.
+
+"""
+
+
 import os
 import glob
 import requests
@@ -10,21 +26,28 @@ from gspread_dataframe import set_with_dataframe
 import gspread
 import calendar
 
+# Prepare for your Facebook integration
+token_file = r'C:\Users\Vivian\Desktop\FB粉絲專頁\粉絲專頁token.txt' # Facebook Graph API access token
+page_id = 'fanpageid' # Facebook fanpage id
+url = f'https://graph.facebook.com/{page_id}/insights/' # Facebook api
 
-token_file = r'C:\Users\Vivian\Desktop\FB粉絲專頁\粉絲專頁token.txt'
-page_id = 'fanpageid' #fill in your fb fanpage id
-url = f'https://graph.facebook.com/{page_id}/insights/' #facebook api
+# Set up Google Cloud credentials and the target Google Sheet ID
+credential_dir=r'C:\Users\Vivian\Desktop\credentials.json'
+sheet_key='googlesheetid' 
 
-# set month range
+# Set month range
 date_now = datetime.now().date()
 rnge_std = -1  # start from last month
 rnge_end = -1  
 
-# save to google sheet
-credential_dir=r'C:\Users\Vivian\Desktop\credentials.json'
-sheet_key='googlesheetid'  # fill in your google sheet id
-
+def get_token():
+    """Read token file"""
+    with open(token_file, 'r') as f:
+        data = f.read()
+    return data
+    
 def connect_googlesheet():
+    """Connect to the target Google Sheet"""
     scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
     credentials = Credentials.from_service_account_file(credential_dir, scopes=scopes)
     gc = gspread.authorize(credentials)
@@ -32,8 +55,12 @@ def connect_googlesheet():
     return gs
 
 def connect_worksheet(year):
+    """
+        Connect to the specific worksheet tab for the given year in the Google Sheet.
+        # This function first attempts to access an existing worksheet with the name '{year}_monthly'.
+        # If the worksheet doesn't exist, it will create a new tab with the specified name and set default dimensions.
+    """
     gs = connect_googlesheet()
-
     try:
         worksheet = gs.worksheet(f'{year}_monthly')
     except:
@@ -41,17 +68,16 @@ def connect_worksheet(year):
         worksheet = gs.worksheet(f'{year}_monthly')       
     return gs, worksheet
 
-def get_token():
-    with open(token_file, 'r') as f:
-        data = f.read()
-    return data
-
 def fb_page_data(date):
-    
+    """
+        Return Facebook fan page data (impressions) for a given month.
+        :param metric: Specifies which metrics to retrieve. In this case, 'page_impressions' and 'page_impressions_unique' are chosen.
+        :param period: Defines the period for the data aggregation. Here, it is set to 'total_over_range' to get the total impressions during the specified date range.
+    """
     until_date = date + relativedelta(months=1)
     page_access_token = get_token()
     params = {
-            'metric': 'page_impressions,page_impressions_unique',
+            'metric': 'page_impressions,page_impressions_unique', # metrics to retrieve
             'access_token': page_access_token,
             'since': date.strftime('%Y-%m-01'), 
             'until': until_date.strftime('%Y-%m-01'),
@@ -63,7 +89,7 @@ def fb_page_data(date):
     blank = []
     try:
         for datas in r['data']:
-            metric = datas['name'] #metric
+            metric = datas['name'] 
             d = datas['values'] 
             df = pd.DataFrame.from_records(d)
             df['month'] = int(date.strftime('%Y%m'))
@@ -79,6 +105,10 @@ def fb_page_data(date):
         return df
 
 def to_googlesheet(dff, eachyear):  
+    """
+        Updates new data into Google Sheet, merging it with existing data, removing duplicates, 
+        and ensuring accurate monthly records.
+    """
     gs, worksheet = connect_worksheet(eachyear)
     
     df_new = dff
@@ -94,15 +124,22 @@ def to_googlesheet(dff, eachyear):
     set_with_dataframe(worksheet=worksheet, dataframe=df, include_index=False, include_column_header=True, resize=True)
     print('Update Successfully!')
 
-def groupby_year(df): # save data to google sheets by year
+def groupby_year(df): 
+    """
+        Groups the data by year and updates each year's data to the corresponding Google Sheet.
+        ``to_googlesheet(df, year)`` 
+          - The DataFrame `df` is split by year.
+          - The data for each year is stored in the respective worksheet named 'year' in Google Sheets.
+    """
     grouped = df.groupby(df.year)
     for year in df.year.unique():
         df = grouped.get_group(year)
         df = df.drop(['year'], axis=1)
-        to_googlesheet(df, year) 
+        to_googlesheet(df, year)
         print(f'finish concat {year}')
 
 def main_monthly_loop():
+    """Main function to execute the monthly data retrieval and update process."""
     concat_df = []
     for delta in range(rnge_std, rnge_end - 1, -1):
         date_delta = date_now + relativedelta(months=delta)
